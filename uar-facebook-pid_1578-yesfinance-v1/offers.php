@@ -6,22 +6,68 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 require_once __DIR__ . '/setting.php';
 yf_capture_tracking();
 
-$os = yf_detect_os();
-$vitrinaKey = yf_vitrina_key($os);
+$userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? strtolower((string) $_SERVER['HTTP_USER_AGENT']) : '';
+$isIos = (strpos($userAgent, 'iphone') !== false)
+  || (strpos($userAgent, 'ipad') !== false)
+  || (strpos($userAgent, 'ipod') !== false)
+  || (strpos($userAgent, 'ios') !== false);
+$isAndroid = strpos($userAgent, 'android') !== false;
 
-if ($os === 'ios' && !empty($vitrina_ios)) {
-  $offerIds = $vitrina_ios;
-} elseif ($os === 'android' && !empty($vitrina_android)) {
-  $offerIds = $vitrina_android;
+if ($isIos) {
+  $os = 'ios';
+  $offerIds = !empty($vitrina_ios) ? $vitrina_ios : $vitrina;
+  $sub1 = 'vitrina_ios';
+} elseif ($isAndroid) {
+  $os = 'android';
+  $offerIds = !empty($vitrina_android) ? $vitrina_android : $vitrina;
+  $sub1 = 'vitrina_android';
 } else {
+  $os = 'desktop';
   $offerIds = $vitrina;
+  $sub1 = 'vitrina';
 }
 
-$sub1 = $vitrinaKey;
 setcookie('vitrina', $sub1, time() + 86400 * 7, '/');
 $_COOKIE['vitrina'] = $sub1;
 
-$qurl = yf_build_qurl($sub1);
+$qurl = '&sub1=' . urlencode($sub1);
+
+if (!empty($_COOKIE['subid'])) {
+  $qurl .= '&sub8=' . urlencode($_COOKIE['subid']);
+} elseif (!empty($_COOKIE['_subid'])) {
+  $qurl .= '&sub8=' . urlencode($_COOKIE['_subid']);
+}
+
+if (!empty($_COOKIE['sub3'])) {
+  $qurl .= '&sub3=' . urlencode($_COOKIE['sub3']);
+}
+
+if (!empty($_SESSION['source'])) {
+  $qurl .= '&sub4=' . urlencode($_SESSION['source']);
+}
+
+$email = $_SESSION['email'] ?? urldecode($_COOKIE['email'] ?? '');
+if (!empty($email)) {
+  $qurl .= '&sub5=' . urlencode($email);
+}
+
+if (!empty($_COOKIE['lc_uid'])) {
+  $qurl .= '&sub6=' . urlencode($_COOKIE['lc_uid']);
+}
+
+if (!empty($_SESSION['wmid'])) {
+  $qurl .= '&sub7=' . urlencode($_SESSION['wmid']);
+}
+
+$utm_term = $_SESSION['utm_term'] ?? '';
+$utm_creative = $_SESSION['utm_creative'] ?? '';
+if (!empty($utm_term) || !empty($utm_creative)) {
+  $qurl .= '&sub2=' . urlencode($utm_term . ' ' . $utm_creative);
+}
+
+if (!empty($_COOKIE['site_id'])) {
+  $qurl .= '&sub20=' . urlencode($_COOKIE['site_id']);
+}
 
 $offers = [];
 foreach ((array) $offerIds as $offerId) {
@@ -52,7 +98,8 @@ include __DIR__ . '/header.php';
 <?php else: ?>
 <?php foreach ($offers as $offer): ?>
 <?php
-  $finalLink = yf_get_offer_link($offer['link'] ?? '#', $qurl);
+  $baseLink = (string) ($offer['link'] ?? '');
+  $finalLink = $baseLink . $qurl;
 ?>
       <article class="offer-card" data-offer-id="<?php echo htmlspecialchars((string) $offer['id_offer'], ENT_QUOTES, 'UTF-8'); ?>">
         <div class="offer-card__top">
@@ -67,7 +114,7 @@ include __DIR__ . '/header.php';
               </div>
             </div>
           </div>
-          <a class="btn btn-primary offer-card__cta" href="<?php echo htmlspecialchars($finalLink, ENT_QUOTES, 'UTF-8'); ?>" rel="nofollow sponsored" data-qurl="<?php echo htmlspecialchars($qurl, ENT_QUOTES, 'UTF-8'); ?>">Get money</a>
+          <a class="btn btn-primary offer-card__cta" href="<?php echo htmlspecialchars($finalLink, ENT_QUOTES, 'UTF-8'); ?>" rel="nofollow sponsored">Get money</a>
         </div>
 
         <ul class="offer-card__highlights">
