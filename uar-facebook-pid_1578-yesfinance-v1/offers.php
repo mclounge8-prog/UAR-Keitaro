@@ -104,7 +104,9 @@ include __DIR__ . '/header.php';
       <article class="offer-card" data-offer-id="<?php echo htmlspecialchars((string) $offer['id_offer'], ENT_QUOTES, 'UTF-8'); ?>">
         <div class="offer-card__top">
           <div class="offer-card__brand">
+<?php if (!empty($offer['logo'])): ?>
             <img class="offer-card__logo" src="<?php echo htmlspecialchars((string) $offer['logo'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars((string) $offer['name'], ENT_QUOTES, 'UTF-8'); ?>" width="56" height="56">
+<?php endif; ?>
             <div>
               <h2 class="offer-card__name"><?php echo htmlspecialchars((string) $offer['name'], ENT_QUOTES, 'UTF-8'); ?></h2>
               <div class="offer-card__rating">
