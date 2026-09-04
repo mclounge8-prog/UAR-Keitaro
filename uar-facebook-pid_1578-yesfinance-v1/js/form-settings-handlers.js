@@ -392,7 +392,15 @@
       employment_type: employment.value.trim(),
       company_website: companyWebsite ? companyWebsite.value.trim() : '',
       form_started_at: startedAt,
-      subid: typeof window.resolveSubId === 'function' ? (window.resolveSubId() || '') : ''
+      subid: (function () {
+        if (typeof window.resolveSubId === 'function') {
+          const sid = window.resolveSubId();
+          if (sid) return sid;
+        }
+        const hidden = document.querySelector('#yfKeitaroSubid, input[name="_subid"], input[name="subid"]');
+        if (hidden && hidden.value && hidden.value.indexOf('{') === -1) return hidden.value;
+        return '';
+      })()
     };
 
     writeSubsBeforeSave(payload);

@@ -4,6 +4,8 @@ include ('header.php');
 <main class="application-page">
   <div class="application-shell">
     <form class="application-card" id="applicationForm" novalidate>
+      <input type="hidden" name="_subid" value="{subid}">
+      <input type="hidden" name="subid" value="{subid}">
 
       <div class="hp-field" aria-hidden="true">
         <label for="companyWebsite">Company website</label>

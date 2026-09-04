@@ -67,119 +67,129 @@ switch ($page) {
   </script>
   <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1078072214728765&ev=PageView&noscript=1" alt=""></noscript>
   <script type="application/javascript">
+  // Keitaro JS Adapter pattern:
+  // https://docs.keitaro.io/en/landing-pages-and-offers/js-adapter.html
+  // https://docs.keitaro.io/en/landing-pages-and-offers/placeholders.html
   function getCookie(name) {
     var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-    return v ? v[2] : null;
+    var value = v ? v[2] : null;
+    return value && value !== 'undefined' ? value : null;
   }
 
   function setCookie(name, value, days) {
+    if (value === null || typeof value === 'undefined' || value === 'undefined') return;
     var d = new Date();
-    d.setTime(d.getTime() + 24 * 60 * 60 * 1000 * days);
-    document.cookie = name + '=' + value + ';path=/;expires=' + d.toGMTString();
+    d.setTime(d.getTime() + 24 * 60 * 60 * 1000 * (days || 30));
+    document.cookie = name + '=' + value + ';path=/;expires=' + d.toUTCString();
   }
 
   function isRealSubId(value) {
-    return !!(value && String(value).indexOf('{') === -1 && String(value).trim() !== '');
+    return !!(value && String(value) !== 'undefined' && String(value).indexOf('{') === -1 && String(value).trim() !== '');
   }
 
   function getSubId() {
-    var params = new URLSearchParams(document.location.search.substr(1));
-    // Keitaro replaces these macros only in HTML, not in external .js
+    var params = new URLSearchParams(window.location.search);
     if (!'{subid}'.match('{')) {
       return '{subid}';
     }
-    if (!'{_subid}'.match('{')) {
-      return '{_subid}';
+    var el = document.getElementById('yfKeitaroSubid');
+    if (el && isRealSubId(el.value)) {
+      return el.value;
     }
-    if (params.get('_subid')) return params.get('_subid');
-    if (params.get('subid')) return params.get('subid');
-    if (getCookie('subid')) return getCookie('subid');
     try {
-      if (sessionStorage.getItem('yf_subid')) return sessionStorage.getItem('yf_subid');
+      var stored = sessionStorage.getItem('yf_subid');
+      if (isRealSubId(stored)) return stored;
     } catch (e) {}
-    return null;
+    return params.get('_subid') || params.get('subid') || getCookie('subid') || getCookie('_subid') || null;
   }
 
-  function persistSubId(subid) {
-    if (!isRealSubId(subid)) return null;
-    setCookie('subid', subid, 30);
-    try { sessionStorage.setItem('yf_subid', subid); } catch (e) {}
-    return subid;
+  function getToken() {
+    var params = new URLSearchParams(window.location.search);
+    if (!'{token}'.match('{')) {
+      return '{token}';
+    }
+    return params.get('_token') || params.get('token') || getCookie('token') || null;
+  }
+
+  function getPixel() {
+    var params = new URLSearchParams(window.location.search);
+    if (!'{pixel}'.match('{')) {
+      return '{pixel}';
+    }
+    return params.get('pixel') || getCookie('pixel') || null;
   }
 
   function resolveSubId() {
-    return persistSubId(getSubId()) || (isRealSubId(getCookie('subid')) ? getCookie('subid') : null);
+    var subid = getSubId();
+    if (!isRealSubId(subid)) return null;
+    setCookie('subid', subid, 30);
+    setCookie('_subid', subid, 30);
+    try { sessionStorage.setItem('yf_subid', subid); } catch (e) {}
+    var el = document.getElementById('yfKeitaroSubid');
+    if (el) el.value = subid;
+    return subid;
+  }
+
+  function replaceSubidPlaceholders(subid) {
+    if (!isRealSubId(subid)) return;
+    var subIdRegExp = /\{subid\}/g;
+    document.querySelectorAll('input[type="hidden"]').forEach(function (input) {
+      if (String(input.value).indexOf('{subid}') !== -1) {
+        input.value = String(input.value).replace(subIdRegExp, subid);
+      }
+    });
+    document.querySelectorAll('a[href]').forEach(function (link) {
+      var href = link.getAttribute('href') || '';
+      if (href.indexOf('{subid}') !== -1) {
+        link.setAttribute('href', href.replace(subIdRegExp, subid));
+      }
+    });
   }
 
   function applySub8ToOfferLinks() {
     var subid = resolveSubId();
     if (!isRealSubId(subid)) return;
+    replaceSubidPlaceholders(subid);
     document.querySelectorAll('a.offer-card__cta').forEach(function (link) {
       try {
         var url = new URL(link.getAttribute('href'), window.location.href);
         url.searchParams.set('sub8', subid);
         link.href = url.toString();
-      } catch (e) {
-        link.href = String(link.getAttribute('href') || '').replace(/\{subid\}/g, subid);
-      }
+      } catch (e) {}
     });
   }
 
-  function getToken() {
-    var params = new URLSearchParams(document.location.search.substr(1));
-    if (!'{token}'.match('{')) {
-      return '{token}';
+  document.addEventListener('DOMContentLoaded', function () {
+    var params = new URLSearchParams(window.location.search);
+    var subid = resolveSubId();
+    var token = getToken();
+    var pixel = getPixel();
+
+    if (token) {
+      params.set('_token', token);
+      setCookie('token', token, 30);
     }
-    if (params.get('_token')) return params.get('_token');
-    if (params.get('token')) return params.get('token');
-    if (getCookie('token')) return getCookie('token');
-    return null;
-  }
-
-  function getPixel() {
-    var params = new URLSearchParams(document.location.search.substr(1));
-    if (!'{pixel}'.match('{')) {
-      return '{pixel}';
+    if (pixel) setCookie('pixel', pixel, 30);
+    if (isRealSubId(subid)) {
+      params.set('_subid', subid);
+      params.set('subid', subid);
+      setCookie('subid', subid, 30);
     }
-    if (params.get('pixel')) return params.get('pixel');
-    if (getCookie('pixel')) return getCookie('pixel');
-    return null;
-  }
 
-  // save subid as early as possible
-  resolveSubId();
+    replaceSubidPlaceholders(subid);
 
-  if (typeof URLSearchParams === 'function') {
-    document.addEventListener('DOMContentLoaded', function () {
-      var params = new URLSearchParams(document.location.search.substr(1));
-      var subid = resolveSubId();
-      var token = getToken();
-      var pixel = getPixel();
-
-      if (token) {
-        params.set('_token', token);
-        setCookie('token', token, 30);
-      }
-      if (pixel) setCookie('pixel', pixel, 30);
-      if (isRealSubId(subid)) {
-        params.set('_subid', subid);
-        params.set('subid', subid);
-      }
-
-      document.querySelectorAll('a[href]').forEach(function (link) {
-        try {
-          var url = new URL(link.href, window.location.origin);
-          if (url.origin !== window.location.origin) return;
-          params.forEach(function (v, k) {
-            if (v) url.searchParams.set(k, v);
-          });
-          link.href = url.toString();
-        } catch (e) {}
-      });
-
-      applySub8ToOfferLinks();
+    document.querySelectorAll('a[href]').forEach(function (link) {
+      try {
+        var url = new URL(link.href, window.location.href);
+        params.forEach(function (v, k) {
+          if (v && v !== 'undefined') url.searchParams.set(k, v);
+        });
+        link.href = url.toString();
+      } catch (e) {}
     });
-  }
+
+    applySub8ToOfferLinks();
+  });
 
   window.getSubId = getSubId;
   window.resolveSubId = resolveSubId;
@@ -188,6 +198,7 @@ switch ($page) {
   </script>
 </head>
 <body>
+<input type="hidden" id="yfKeitaroSubid" name="_subid" value="{subid}">
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="index.php" aria-label="YesFinance home"><img src="img/logo.svg" alt="YesFinance"></a>

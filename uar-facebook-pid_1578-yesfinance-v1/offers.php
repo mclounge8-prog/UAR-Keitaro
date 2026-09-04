@@ -47,6 +47,9 @@ if (!empty($_COOKIE['subid'])) {
 
 if ($sub8 !== '' && strpos($sub8, '{') === false) {
   $qurl .= '&sub8=' . urlencode($sub8);
+} else {
+  // Keitaro placeholder: replaced by tracker and/or JS Adapter on the page
+  $qurl .= '&sub8={subid}';
 }
 
 if (!empty($_COOKIE['sub3'])) {
