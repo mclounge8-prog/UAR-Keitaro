@@ -60,9 +60,16 @@
     });
   }
 
+  function trackFb(eventName) {
+    if (typeof window.fbq === 'function') {
+      window.fbq('track', eventName);
+    }
+  }
+
   window.yfGetCookie = getCookie;
   window.yfSetCookie = setCookie;
   window.yfGetOSType = getOSType;
+  window.yfTrackFb = trackFb;
 })();
 
 (() => {
@@ -458,11 +465,26 @@
 
   next.addEventListener('click', () => {
     if (!validate()) return;
+    if (current === 1 && typeof window.yfTrackFb === 'function') {
+      window.yfTrackFb('Contact');
+    }
     if (current < 3) show(current + 1);
     else finish();
   });
 
   back.addEventListener('click', () => {
     if (current > 1) show(current - 1);
+  });
+})();
+
+(() => {
+  document.addEventListener('click', (e) => {
+    const cta = e.target.closest('.offer-card__cta');
+    if (!cta) return;
+    if (typeof window.yfTrackFb === 'function') {
+      window.yfTrackFb('SubmitApplication');
+    } else if (typeof window.fbq === 'function') {
+      window.fbq('track', 'SubmitApplication');
+    }
   });
 })();
