@@ -153,6 +153,16 @@ function yf_capture_tracking()
 		$_SESSION['wmid'] = $_GET['pid'];
 	}
 
+	if (!empty($_GET['subid'])) {
+		$_SESSION['subid'] = $_GET['subid'];
+		setcookie('subid', $_GET['subid'], time() + 86400 * 30, '/');
+		$_COOKIE['subid'] = $_GET['subid'];
+	} elseif (!empty($_GET['_subid'])) {
+		$_SESSION['subid'] = $_GET['_subid'];
+		setcookie('subid', $_GET['_subid'], time() + 86400 * 30, '/');
+		$_COOKIE['subid'] = $_GET['_subid'];
+	}
+
 	if (!empty($_GET['pixel'])) $_SESSION['pixelfb'] = $_GET['pixel'];
 
 	if (!empty($_GET['click_id'])) {

@@ -66,6 +66,78 @@ switch ($page) {
   fbq('track', 'PageView');
   </script>
   <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1078072214728765&ev=PageView&noscript=1" alt=""></noscript>
+  <script type="application/javascript">
+  function getCookie(name) {
+    var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
+  }
+
+  function setCookie(name, value, days) {
+    var d = new Date();
+    d.setTime(d.getTime() + 24 * 60 * 60 * 1000 * days);
+    document.cookie = name + '=' + value + ';path=/;expires=' + d.toGMTString();
+  }
+
+  function getSubId() {
+    var params = new URLSearchParams(document.location.search.substr(1));
+    if (!'{subid}'.match('{')) {
+      return '{subid}';
+    }
+    if (params.get('_subid')) return params.get('_subid');
+    if (params.get('subid')) return params.get('subid');
+    if (getCookie('subid')) return getCookie('subid');
+  }
+
+  function getToken() {
+    var params = new URLSearchParams(document.location.search.substr(1));
+    if (!'{token}'.match('{')) {
+      return '{token}';
+    }
+    if (params.get('_token')) return params.get('_token');
+    if (params.get('token')) return params.get('token');
+    if (getCookie('token')) return getCookie('token');
+    return null;
+  }
+
+  function getPixel() {
+    var params = new URLSearchParams(document.location.search.substr(1));
+    if (!'{pixel}'.match('{')) {
+      return '{pixel}';
+    }
+    if (params.get('pixel')) return params.get('pixel');
+    if (getCookie('pixel')) return getCookie('pixel');
+    return null;
+  }
+
+  if (typeof URLSearchParams === 'function') {
+    document.addEventListener('DOMContentLoaded', function () {
+      var params = new URLSearchParams(document.location.search.substr(1));
+      var subid = getSubId();
+      var token = getToken();
+      var pixel = getPixel();
+
+      if (token) params.set('_token', token);
+      if (pixel) setCookie('pixel', pixel, 30);
+      if (token) setCookie('token', token, 30);
+      if (subid) {
+        setCookie('subid', subid, 30);
+        params.set('_subid', subid);
+        params.set('subid', subid);
+      }
+
+      document.querySelectorAll('a[href]').forEach(function (link) {
+        try {
+          var url = new URL(link.href, window.location.origin);
+          if (url.origin !== window.location.origin) return;
+          params.forEach(function (v, k) {
+            if (v) url.searchParams.set(k, v);
+          });
+          link.href = url.toString();
+        } catch (e) {}
+      });
+    });
+  }
+  </script>
 </head>
 <body>
 <header class="site-header">

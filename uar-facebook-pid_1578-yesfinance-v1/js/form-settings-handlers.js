@@ -10,54 +10,11 @@
     document.cookie = name + '=' + value + ';path=/;expires=' + d.toGMTString();
   }
 
-  function getSubId() {
-    var params = new URLSearchParams(document.location.search.substr(1));
-    if (!'{subid}'.match('{')) {
-      return '{subid}';
-    }
-    if (params.get('_subid')) return params.get('_subid');
-    if (params.get('subid')) return params.get('subid');
-    if (getCookie('subid')) return getCookie('subid');
-    return null;
-  }
-
-  function getToken() {
-    var params = new URLSearchParams(document.location.search.substr(1));
-    if (!'{token}'.match('{')) {
-      return '{token}';
-    }
-    if (params.get('_token')) return params.get('_token');
-    if (params.get('token')) return params.get('token');
-    if (getCookie('token')) return getCookie('token');
-    return null;
-  }
-
-  function getPixel() {
-    var params = new URLSearchParams(document.location.search.substr(1));
-    if (!'{pixel}'.match('{')) {
-      return '{pixel}';
-    }
-    if (params.get('pixel')) return params.get('pixel');
-    if (getCookie('pixel')) return getCookie('pixel');
-    return null;
-  }
-
   function getOSType() {
     var ua = navigator.userAgent || '';
     if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
     if (/Android/i.test(ua)) return 'android';
     return 'desktop';
-  }
-
-  if (typeof URLSearchParams === 'function') {
-    document.addEventListener('DOMContentLoaded', function () {
-      var subid = getSubId();
-      var token = getToken();
-      var pixel = getPixel();
-      if (pixel) setCookie('pixel', pixel, 30);
-      if (token) setCookie('token', token, 30);
-      if (subid) setCookie('subid', subid, 30);
-    });
   }
 
   function trackFb(eventName) {

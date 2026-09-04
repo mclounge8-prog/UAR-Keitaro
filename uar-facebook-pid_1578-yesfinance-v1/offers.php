@@ -32,10 +32,23 @@ $_COOKIE['vitrina'] = $sub1;
 
 $qurl = '&sub1=' . urlencode($sub1);
 
+$sub8 = '';
 if (!empty($_COOKIE['subid'])) {
-  $qurl .= '&sub8=' . urlencode($_COOKIE['subid']);
+  $sub8 = (string) $_COOKIE['subid'];
 } elseif (!empty($_COOKIE['_subid'])) {
-  $qurl .= '&sub8=' . urlencode($_COOKIE['_subid']);
+  $sub8 = (string) $_COOKIE['_subid'];
+} elseif (!empty($_GET['subid'])) {
+  $sub8 = (string) $_GET['subid'];
+} elseif (!empty($_GET['_subid'])) {
+  $sub8 = (string) $_GET['_subid'];
+} elseif (!empty($_SESSION['subid'])) {
+  $sub8 = (string) $_SESSION['subid'];
+}
+
+if ($sub8 !== '' && strpos($sub8, '{') === false) {
+  $qurl .= '&sub8=' . urlencode($sub8);
+} else {
+  $qurl .= '&sub8={subid}';
 }
 
 if (!empty($_COOKIE['sub3'])) {
