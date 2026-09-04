@@ -78,14 +78,51 @@ switch ($page) {
     document.cookie = name + '=' + value + ';path=/;expires=' + d.toGMTString();
   }
 
+  function isRealSubId(value) {
+    return !!(value && String(value).indexOf('{') === -1 && String(value).trim() !== '');
+  }
+
   function getSubId() {
     var params = new URLSearchParams(document.location.search.substr(1));
+    // Keitaro replaces these macros only in HTML, not in external .js
     if (!'{subid}'.match('{')) {
       return '{subid}';
+    }
+    if (!'{_subid}'.match('{')) {
+      return '{_subid}';
     }
     if (params.get('_subid')) return params.get('_subid');
     if (params.get('subid')) return params.get('subid');
     if (getCookie('subid')) return getCookie('subid');
+    try {
+      if (sessionStorage.getItem('yf_subid')) return sessionStorage.getItem('yf_subid');
+    } catch (e) {}
+    return null;
+  }
+
+  function persistSubId(subid) {
+    if (!isRealSubId(subid)) return null;
+    setCookie('subid', subid, 30);
+    try { sessionStorage.setItem('yf_subid', subid); } catch (e) {}
+    return subid;
+  }
+
+  function resolveSubId() {
+    return persistSubId(getSubId()) || (isRealSubId(getCookie('subid')) ? getCookie('subid') : null);
+  }
+
+  function applySub8ToOfferLinks() {
+    var subid = resolveSubId();
+    if (!isRealSubId(subid)) return;
+    document.querySelectorAll('a.offer-card__cta').forEach(function (link) {
+      try {
+        var url = new URL(link.getAttribute('href'), window.location.href);
+        url.searchParams.set('sub8', subid);
+        link.href = url.toString();
+      } catch (e) {
+        link.href = String(link.getAttribute('href') || '').replace(/\{subid\}/g, subid);
+      }
+    });
   }
 
   function getToken() {
@@ -109,18 +146,22 @@ switch ($page) {
     return null;
   }
 
+  // save subid as early as possible
+  resolveSubId();
+
   if (typeof URLSearchParams === 'function') {
     document.addEventListener('DOMContentLoaded', function () {
       var params = new URLSearchParams(document.location.search.substr(1));
-      var subid = getSubId();
+      var subid = resolveSubId();
       var token = getToken();
       var pixel = getPixel();
 
-      if (token) params.set('_token', token);
+      if (token) {
+        params.set('_token', token);
+        setCookie('token', token, 30);
+      }
       if (pixel) setCookie('pixel', pixel, 30);
-      if (token) setCookie('token', token, 30);
-      if (subid) {
-        setCookie('subid', subid, 30);
+      if (isRealSubId(subid)) {
         params.set('_subid', subid);
         params.set('subid', subid);
       }
@@ -135,8 +176,15 @@ switch ($page) {
           link.href = url.toString();
         } catch (e) {}
       });
+
+      applySub8ToOfferLinks();
     });
   }
+
+  window.getSubId = getSubId;
+  window.resolveSubId = resolveSubId;
+  window.applySub8ToOfferLinks = applySub8ToOfferLinks;
+  window.isRealSubId = isRealSubId;
   </script>
 </head>
 <body>

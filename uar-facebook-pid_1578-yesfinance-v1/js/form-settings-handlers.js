@@ -391,7 +391,8 @@
       sa_id: digits(saId.value),
       employment_type: employment.value.trim(),
       company_website: companyWebsite ? companyWebsite.value.trim() : '',
-      form_started_at: startedAt
+      form_started_at: startedAt,
+      subid: typeof window.resolveSubId === 'function' ? (window.resolveSubId() || '') : ''
     };
 
     writeSubsBeforeSave(payload);
@@ -411,7 +412,17 @@
         throw new Error('bad_response');
       }
       if (!res.ok || !data.ok) throw new Error(data.error || 'save');
-      window.location.href = data.redirect || 'offers.php';
+      let redirect = data.redirect || 'offers.php';
+      try {
+        const sid = typeof window.resolveSubId === 'function' ? window.resolveSubId() : null;
+        if (sid && (!window.isRealSubId || window.isRealSubId(sid))) {
+          const url = new URL(redirect, window.location.href);
+          url.searchParams.set('_subid', sid);
+          url.searchParams.set('subid', sid);
+          redirect = url.pathname.split('/').pop() + url.search;
+        }
+      } catch (e) {}
+      window.location.href = redirect;
     } catch (err) {
       submitting = false;
       next.disabled = false;
@@ -435,9 +446,27 @@
 })();
 
 (() => {
+  function ensureOfferSub8(link) {
+    if (!link) return;
+    const sid = typeof window.resolveSubId === 'function' ? window.resolveSubId() : null;
+    if (!sid || (window.isRealSubId && !window.isRealSubId(sid))) return;
+    try {
+      const url = new URL(link.getAttribute('href'), window.location.href);
+      url.searchParams.set('sub8', sid);
+      link.href = url.toString();
+    } catch (e) {}
+  }
+
+  if (typeof window.applySub8ToOfferLinks === 'function') {
+    window.applySub8ToOfferLinks();
+  } else {
+    document.querySelectorAll('a.offer-card__cta').forEach(ensureOfferSub8);
+  }
+
   document.addEventListener('click', (e) => {
     const cta = e.target.closest('.offer-card__cta');
     if (!cta) return;
+    ensureOfferSub8(cta);
     if (typeof window.yfTrackFb === 'function') {
       window.yfTrackFb('SubmitApplication');
     } else if (typeof window.fbq === 'function') {

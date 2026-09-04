@@ -259,4 +259,20 @@ $_COOKIE['email'] = rawurlencode($order['email']);
 setcookie('vitrina', 'vitrina_' . $os, time() + 86400 * 7, '/');
 $_COOKIE['vitrina'] = 'vitrina_' . $os;
 
-echo json_encode(['ok' => true, 'redirect' => 'offers.php']);
+$redirect = 'offers.php';
+$subid = '';
+if (!empty($data['subid']) && strpos((string) $data['subid'], '{') === false) {
+	$subid = trim((string) $data['subid']);
+} elseif (!empty($_COOKIE['subid']) && strpos((string) $_COOKIE['subid'], '{') === false) {
+	$subid = (string) $_COOKIE['subid'];
+} elseif (!empty($_SESSION['subid']) && strpos((string) $_SESSION['subid'], '{') === false) {
+	$subid = (string) $_SESSION['subid'];
+}
+if ($subid !== '') {
+	$_SESSION['subid'] = $subid;
+	setcookie('subid', $subid, time() + 86400 * 30, '/');
+	$_COOKIE['subid'] = $subid;
+	$redirect .= '?_subid=' . rawurlencode($subid) . '&subid=' . rawurlencode($subid);
+}
+
+echo json_encode(['ok' => true, 'redirect' => $redirect]);

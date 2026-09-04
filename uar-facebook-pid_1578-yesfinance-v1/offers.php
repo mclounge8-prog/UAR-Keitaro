@@ -47,8 +47,6 @@ if (!empty($_COOKIE['subid'])) {
 
 if ($sub8 !== '' && strpos($sub8, '{') === false) {
   $qurl .= '&sub8=' . urlencode($sub8);
-} else {
-  $qurl .= '&sub8={subid}';
 }
 
 if (!empty($_COOKIE['sub3'])) {
